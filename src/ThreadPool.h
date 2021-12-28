@@ -3,6 +3,7 @@
 #include <thread>
 #include <memory>
 #include <functional>
+#include <future>
 
 namespace WorkerThread
 {
@@ -23,6 +24,7 @@ namespace WorkerThread
         ~ThreadPool();
 
         ThreadPool &AddToPool(std::function<void()> &&) noexcept;
+        ThreadPool &AddToPool(std::packaged_task<int()> &&) noexcept;
     };
 
 }

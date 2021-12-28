@@ -89,7 +89,14 @@ namespace WorkerThread
     ThreadPool &ThreadPool::AddToPool(std::function<void()> &&xIn) noexcept
     {
         std::scoped_lock tWaitingListLock(m->waitingListMutex);
-        m->waitingList.emplace(xIn);
+        m->waitingList.emplace(std::move(xIn));
+        return *this;
+    }
+
+    ThreadPool &ThreadPool::AddToPool(std::packaged_task<int()> &&xIn) noexcept
+    {
+        std::scoped_lock tWaitingListLock(m->waitingListMutex);
+        // m->waitingList.emplace(std::move(xIn));
         return *this;
     }
 }
