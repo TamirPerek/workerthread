@@ -3,7 +3,7 @@
 #include <chrono>
 #include <thread>
 
-#include "../src/ThreadPool.h"
+#include "ThreadPool.h"
 
 #include <signals.h>
 
