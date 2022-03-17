@@ -23,11 +23,11 @@ namespace WorkerThread
 
         std::mutex waitingListMutex;
 
-        Impl() noexcept = default;
-        ~Impl() noexcept = default;
-        Impl(const Impl &) noexcept = delete;
+        Impl() = default;
+        ~Impl() = default;
+        Impl(const Impl &) = delete;
         Impl(Impl &&) = delete;
-        Impl &operator=(const Impl &) noexcept = delete;
+        Impl &operator=(const Impl &) = delete;
         Impl &operator=(Impl &&) = delete;
     };
 

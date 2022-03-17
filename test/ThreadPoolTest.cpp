@@ -38,7 +38,7 @@ TEST(ThreadPoolTest, Test)
             std::cout << "finsihed: " << i << " after: " << 10 + i << "s \n";
             gResult.emit(i); });
     }
-    std::this_thread::sleep_for(std::chrono::seconds(60));
+    std::this_thread::sleep_for(std::chrono::minutes(5));
     EXPECT_EQ(tResult, 45);
 }
 
