@@ -20,48 +20,51 @@ public:
     ~ThreadPool()
     {
         mFinished = true;
-        std::scoped_lock workerLock(mWorkerMutex);
+        mCondition.notify_one();
         if (mWorkerfunc.joinable())
             mWorkerfunc.join();
 
-        for(auto &[tThread, tFinished] : mPool)
+        for (auto &[tThread, tFinished] : mPool)
         {
-            if(tThread.joinable())
+            if (tThread.joinable())
                 tThread.join();
         }
         mPool.clear();
     }
 
     template <typename T, typename... Args>
-    std::future<typename std::invoke_result<T, Args...>::type> add(T &&func, Args&&... args)
+    std::future<typename std::invoke_result<T, Args...>::type> add(T &&func, Args &&...args)
     {
         using ReturnType = typename std::invoke_result<T, Args...>::type;
         auto promise = std::make_shared<std::promise<ReturnType>>();
         std::future<ReturnType> future = promise->get_future();
 
-        std::scoped_lock waitingListLock(mWaitingListMutex);
-
-        auto tLambda = [mypromise = std::move(promise), innerFunc = std::forward<T>(func), argsTuple = std::make_tuple(std::forward<Args>(args)...)]() mutable
         {
-            try
-            {
-                if constexpr (std::is_void_v<ReturnType>)
-                {
-                    std::apply(innerFunc, argsTuple);
-                    mypromise->set_value();
-                }
-                else
-                {
-                    mypromise->set_value(std::apply(innerFunc, argsTuple));
-                }
-            }
-            catch (...)
-            {
-                mypromise->set_exception(std::current_exception());
-            }
-        };
+            std::scoped_lock waitingListLock(mWaitingListMutex);
 
-        mWaitingList.emplace(std::move(tLambda));
+            auto tLambda = [mypromise = std::move(promise), innerFunc = std::forward<T>(func), argsTuple = std::make_tuple(std::forward<Args>(args)...)]() mutable
+            {
+                try
+                {
+                    if constexpr (std::is_void_v<ReturnType>)
+                    {
+                        std::apply(innerFunc, argsTuple);
+                        mypromise->set_value();
+                    }
+                    else
+                    {
+                        mypromise->set_value(std::apply(innerFunc, argsTuple));
+                    }
+                }
+                catch (...)
+                {
+                    mypromise->set_exception(std::current_exception());
+                }
+            };
+
+            mWaitingList.emplace(std::move(tLambda));
+        }
+        mCondition.notify_one();
 
         return future;
     }
@@ -85,30 +88,30 @@ private:
             mPool.emplace_back(std::thread{}, std::atomic<bool>{true});
         }
 
-        mWorkerfunc = std::thread(&ThreadPool::workerFunc, std::reference_wrapper(*this));
+        mWorkerfunc = std::thread(&ThreadPool::workerFunc, this);
     }
 
-    static void workerFunc(ThreadPool &threadPool) noexcept
+    void workerFunc() noexcept
     {
-        while (!threadPool.mFinished)
+        while (!mFinished)
         {
-            for (auto &[tThread, tFinished] : threadPool.mPool)
+            for (auto &[tThread, tFinished] : mPool)
             {
-                std::scoped_lock workerLock(threadPool.mWorkerMutex);
-
                 if (!tFinished)
                     continue;
 
                 if (tThread.joinable())
                     tThread.join();
 
-                std::scoped_lock tWaitingListLock(threadPool.mWaitingListMutex);
+                std::unique_lock lock(mWaitingListMutex);
+                mCondition.wait(lock, [this]
+                                { return mFinished || !mWaitingList.empty(); });
 
-                if (threadPool.mWaitingList.empty())
-                    continue;
+                if (mFinished && mWaitingList.empty())
+                    return;
 
-                auto tNextFunction = threadPool.mWaitingList.front();
-                threadPool.mWaitingList.pop();
+                auto tNextFunction = std::move(mWaitingList.front());
+                mWaitingList.pop();
                 tThread = std::thread([&tFlagg = tFinished](std::function<void()> &&xIn)
                                       {
                                             tFlagg = false;
@@ -116,7 +119,6 @@ private:
                                             tFlagg = true; },
                                       tNextFunction);
             }
-            std::this_thread::sleep_for(std::chrono::milliseconds{10});
         }
     }
 
@@ -125,6 +127,7 @@ private:
     std::thread mWorkerfunc;
     std::atomic<bool> mFinished;
     std::size_t mProcessorCount;
+    std::condition_variable mCondition;
     std::mutex mWaitingListMutex;
     std::mutex mWorkerMutex;
 };
