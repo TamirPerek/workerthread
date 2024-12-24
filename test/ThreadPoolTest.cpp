@@ -17,6 +17,21 @@ TEST(ThreadPoolTest, GreateInstance)
     ASSERT_EQ(ThreadPool::getInstance().getProcessorCount(), 64);
 }
 
+TEST(ThreadPoolTest, RemoveInstance)
+{
+    ThreadPool::createInstance();
+    ThreadPool::removeInstance();
+    ASSERT_FALSE(ThreadPool::isCreated());
+}
+
+TEST(ThreadPoolTest, GetInstance)
+{
+    ThreadPool::createInstance();
+    ASSERT_NO_THROW(ThreadPool::getInstance());
+    ThreadPool::removeInstance();
+    ASSERT_THROW(ThreadPool::getInstance(), std::runtime_error);
+}
+
 static constexpr int TestFunc()
 {
     return 40 + 2;
@@ -46,6 +61,9 @@ static double calculatePi(size_t iterations)
 
 TEST(ThreadPoolTest, AddOneFunctionToPool)
 {
+    if(!ThreadPool::isCreated())
+        ThreadPool::createInstance();
+        
     ASSERT_EQ(ThreadPool::getInstance().add([]()
                                             { return 2 + 4; })
                   .get(),
@@ -53,12 +71,18 @@ TEST(ThreadPoolTest, AddOneFunctionToPool)
 }
 TEST(ThreadPoolTest, AddOneStaticFunctionToPool)
 {
+    if(!ThreadPool::isCreated())
+        ThreadPool::createInstance();
+
     auto tFuture = ThreadPool::getInstance().add(&TestFunc);
     ASSERT_EQ(tFuture.get(), 42);
 }
 
 TEST(ThreadPoolTest, AddMultipleFunctionsToPool)
 {
+    if(!ThreadPool::isCreated())
+        ThreadPool::createInstance();
+
     std::vector<std::future<std::size_t>> tFutures;
     for (std::size_t i = 0; i < 100; i++)
     {
@@ -79,6 +103,9 @@ TEST(ThreadPoolTest, AddMultipleFunctionsToPool)
 
 TEST(ThreadPoolTest, AddMultipleStaticFunctionsToPool)
 {
+    if(!ThreadPool::isCreated())
+        ThreadPool::createInstance();
+
     std::vector<std::future<int>> tFutures;
     for (std::size_t i = 0; i < 100; i++)
     {
@@ -96,6 +123,9 @@ TEST(ThreadPoolTest, AddMultipleStaticFunctionsToPool)
 
 TEST(ThreadPoolTest, AddMonteCarlosToPool)
 {
+    if(!ThreadPool::isCreated())
+        ThreadPool::createInstance();
+
     std::vector<std::future<double>> tFutures;
     static constexpr std::size_t amount{100};
     for (std::size_t i = 0; i < amount; i++)
@@ -115,6 +145,9 @@ TEST(ThreadPoolTest, AddMonteCarlosToPool)
 
 TEST(ThreadPoolTest, ParallelProcessing)
 {
+    if(!ThreadPool::isCreated())
+        ThreadPool::createInstance();
+
     std::vector<std::future<void>> tFutures;
     std::atomic<int> counter{0};
     static constexpr std::size_t numTasks{1000};
@@ -139,6 +172,9 @@ TEST(ThreadPoolTest, ParallelProcessing)
 
 TEST(ThreadPoolTest, AddLambdaFunctionToPool)
 {
+    if(!ThreadPool::isCreated())
+        ThreadPool::createInstance();
+
     auto tFuture = ThreadPool::getInstance().add([]()
                                                  { return 7 * 6; });
     ASSERT_EQ(tFuture.get(), 42);
@@ -146,6 +182,9 @@ TEST(ThreadPoolTest, AddLambdaFunctionToPool)
 
 TEST(ThreadPoolTest, AddMemberFunctionToPool)
 {
+    if(!ThreadPool::isCreated())
+        ThreadPool::createInstance();
+
     struct TestClass
     {
         int memberFunction()
@@ -161,6 +200,9 @@ TEST(ThreadPoolTest, AddMemberFunctionToPool)
 
 TEST(ThreadPoolTest, AddMultipleDifferentTasks)
 {
+    if(!ThreadPool::isCreated())
+        ThreadPool::createInstance();
+
     auto future1 = ThreadPool::getInstance().add([]()
                                                  { return 1 + 1; });
     auto future2 = ThreadPool::getInstance().add([]()
@@ -175,6 +217,9 @@ TEST(ThreadPoolTest, AddMultipleDifferentTasks)
 
 TEST(ThreadPoolTest, AddFunctionThrowingException)
 {
+    if(!ThreadPool::isCreated())
+        ThreadPool::createInstance();
+
     auto tFuture = ThreadPool::getInstance().add([]()
                                                  { 
                                     throw std::runtime_error("Test exception");
@@ -185,6 +230,9 @@ TEST(ThreadPoolTest, AddFunctionThrowingException)
 
 TEST(ThreadPoolTest, AddMultipleFunctionsWithExceptions)
 {
+    if(!ThreadPool::isCreated())
+        ThreadPool::createInstance();
+        
     std::vector<std::future<void>> tFutures;
     for (std::size_t i = 0; i < 10; ++i)
     {
