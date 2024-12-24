@@ -14,6 +14,7 @@ public:
     static ThreadPool &getInstance();
 
     static void createInstance(std::size_t amount = std::thread::hardware_concurrency());
+    static void removeInstance() noexcept;
 
     static bool isCreated() noexcept;
 

@@ -4,8 +4,10 @@ std::unique_ptr<ThreadPool> gThreadPool;
 
 ThreadPool &ThreadPool::getInstance()
 {
-    if (!isCreated())
-        createInstance();
+    if (!isCreated())  
+    {
+        throw std::runtime_error("ThreadPool is not created");
+    }
 
     return *gThreadPool;
 }
@@ -13,6 +15,11 @@ ThreadPool &ThreadPool::getInstance()
 void ThreadPool::createInstance(std::size_t amount)
 {
     gThreadPool.reset(new ThreadPool{amount});
+}
+
+void ThreadPool::removeInstance() noexcept
+{
+    gThreadPool.reset();
 }
 
 bool ThreadPool::isCreated() noexcept
