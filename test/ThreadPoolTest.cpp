@@ -196,11 +196,15 @@ TEST(ThreadPoolTest, AddMultipleFunctionsWithExceptions)
                                         } }));
     }
 
-    for (auto &&future : tFutures)
+    for(size_t i = 0; i < 10; ++i)
     {
-        if (future.valid() && future.wait_for(std::chrono::seconds(0)) == std::future_status::ready)
+        if (i % 2 == 0)
         {
-            ASSERT_THROW(future.get(), std::runtime_error);
+            ASSERT_THROW(tFutures[i].get(), std::runtime_error);
+        }
+        else
+        {
+            tFutures[i].get();
         }
     }
 }
