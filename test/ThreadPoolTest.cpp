@@ -44,7 +44,7 @@ static double calculatePi(size_t iterations)
         }
     }
 
-    return (4.0 * insideCircle) / iterations;
+    return (4.0 * static_cast<double>(insideCircle)) / static_cast<double>(iterations);
 }
 
 TEST(ThreadPoolTest, AddOneFunctionToPool)
