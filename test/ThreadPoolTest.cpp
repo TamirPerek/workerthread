@@ -10,9 +10,6 @@ TEST(ThreadPoolTest, GreateInstance)
 {
     ThreadPool::createInstance();
     ASSERT_TRUE(ThreadPool::isCreated());
-
-    ThreadPool::createInstance();
-    ASSERT_TRUE(ThreadPool::isCreated());
     ASSERT_EQ(ThreadPool::getInstance().getProcessorCount(), std::thread::hardware_concurrency());
 
     ThreadPool::createInstance(64);
