@@ -2,6 +2,7 @@
 
 #include <thread>
 #include <vector>
+#include <queue>
 #include <tuple>
 #include <future>
 #include <type_traits>
